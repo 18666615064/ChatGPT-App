@@ -1,6 +1,6 @@
 <template>
     <div style="width: 95%;">
-        <div v-if="key == ''">
+        <div v-if="key == ''" style="text-align: center;">
             <q-icon name="warning" color="warning" size="4rem" />
             Please setup the ApiKey by setting
         </div>
@@ -17,7 +17,7 @@
             />
 
         </div>
-        <div style="background-color: #f6f6f6;padding: 5px;border-top-left-radius: 10px;border-top-right-radius: 10px;" class="shadow-up-7 fixed-bottom">
+        <div style="background-color: #f6f6f6;padding: 5px;border-top-left-radius: 6px;border-top-right-radius: 6px;" class="shadow-up-7 fixed-bottom" v-if="key != ''">
             <q-input bottom-slots v-model="text" label="" :dense="dense">
                 <template v-slot:before>
                     <q-avatar>
@@ -41,6 +41,10 @@
 import {
     defineComponent
 } from 'vue';
+import { inject } from 'vue'
+import { Configuration, OpenAIApi } from "openai";
+let configuration:any = null;
+let openai:any = null;
 export default defineComponent({
     name: 'Chat',
     data() {
@@ -63,6 +67,11 @@ export default defineComponent({
     },
     created() {
         this.key = localStorage.getItem('key') || '';
+        const bus:any = inject('bus')
+        bus.on('keychange', (key: any) => {
+            this.key = key;
+        })
+        this.reConnection();
     },
     methods: {
         send() {
@@ -82,6 +91,38 @@ export default defineComponent({
             });
             this.text = '';
             this.waiting = true;
+        },
+        reConnection() {
+            if(this.key) {
+                configuration = new Configuration({
+                    apiKey: this.key+'0',
+                });
+                openai = new OpenAIApi(configuration);
+                const response = openai.createCompletion({
+                    model: "text-davinci-003",  // 对话模型的名称
+                    prompt: this.text,
+                    temperature: 0.9,  // 值在[0,1]之间，越大表示回复越具有不确定性
+                    max_tokens: 3600,  // 回复最大的字符数
+                    top_p: 1,
+                    frequency_penalty: 0.06,  // [-2,2]之间，该值越大则更倾向于产生不同的内容
+                    presence_penalty: 0.05,  // [-2,2]之间，该值越大则更倾向于产生不同的内容
+                    stop: ["#"]
+                }).then((rs: any) => {
+                    if(rs.status == 200) {
+                        console.log(rs)
+                    } else {
+
+                    }
+                }).catch((err: any) => {
+                    configuration = null;
+                    openai = null;
+                     this.$q.dialog({
+                        title: 'Error',
+                        message: err.message + ', Please check your ApiKey'
+                    })
+                    console.log(err)
+                });
+            }
         }
     },
     setup() {

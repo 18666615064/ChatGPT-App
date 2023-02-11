@@ -48,9 +48,8 @@
 import { defineComponent, ref } from 'vue';
 import EssentialLink from 'components/EssentialLink.vue';
 import { useQuasar } from 'quasar'
-
-
-
+import { inject } from 'vue'
+let bus:any = null;
 export default defineComponent({
   name: 'MainLayout',
 
@@ -61,13 +60,13 @@ export default defineComponent({
   data() {
     return {
       key: "x",
+      $bus: Object,
       linksList: [
         {
           title: 'ApiKey',
           caption: 'Set your api from OpenAI',
           icon: 'key',
           onClick: () => {
-            console.log(this.key)
             this.$q.dialog({
               title: 'ApiKey',
               message: 'Input your ApiKey',
@@ -80,6 +79,7 @@ export default defineComponent({
             }).onOk(data => {
               this.key = data;
               localStorage.setItem('key', data);
+              bus.emit('keychange', data);
             })
           }
         },
@@ -89,6 +89,7 @@ export default defineComponent({
   created() {
     this.key = localStorage.getItem("key") || "";
     this.$q = useQuasar()
+    bus = inject('bus')
   },
   setup () {
     const leftDrawerOpen = ref(false)
