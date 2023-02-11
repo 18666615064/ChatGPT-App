@@ -12,7 +12,7 @@
         />
 
         <q-toolbar-title>
-          Settings
+          ChatGPT
         </q-toolbar-title>
 
       </q-toolbar>
@@ -47,6 +47,9 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import EssentialLink from 'components/EssentialLink.vue';
+import { useQuasar } from 'quasar'
+
+
 
 export default defineComponent({
   name: 'MainLayout',
@@ -62,9 +65,22 @@ export default defineComponent({
         {
           title: 'ApiKey',
           caption: 'Set your api from OpenAI',
-          icon: 'school',
+          icon: 'key',
           onClick: () => {
             console.log(this.key)
+            this.$q.dialog({
+              title: 'ApiKey',
+              message: 'Input your ApiKey',
+              prompt: {
+                model: '' + this.key,
+                type: 'text' // optional
+              },
+              cancel: true,
+              persistent: true
+            }).onOk(data => {
+              this.key = data;
+              localStorage.setItem('key', data);
+            })
           }
         },
       ]
@@ -72,9 +88,11 @@ export default defineComponent({
   },
   created() {
     this.key = localStorage.getItem("key") || "";
+    this.$q = useQuasar()
   },
   setup () {
     const leftDrawerOpen = ref(false)
+    
     return {
       leftDrawerOpen,
       toggleLeftDrawer () {
